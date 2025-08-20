@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: payment-terminal-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python src/black_rock/api/app.py
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PAYMENT_SERVER_URL
+        value: https://your-payment-processor.com
