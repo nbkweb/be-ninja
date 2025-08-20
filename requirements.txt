@@ -127,7 +127,6 @@ python-engineio==4.12.2
 python-multipart==0.0.6
 python-socketio==5.13.0
 pyunormalize==16.0.0
-pywin32==311
 PyYAML==6.0.2
 qrcode==7.4.2
 referencing==0.36.2
