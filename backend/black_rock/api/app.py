@@ -26,7 +26,8 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
 # Enable CORS
-CORS(app, supports_credentials=True)
+#CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=["https://volvo-xc-90.onrender.com"])  #CORS Amendment
 
 # Initialize services
 db_manager = DatabaseManager()
