@@ -1,4 +1,4 @@
-"""
+""" 
 Black Rock Payment Terminal - Flask API Application
 """
 
@@ -53,6 +53,51 @@ def health_check():
         'status': 'healthy',
         'message': 'Payment Terminal API is running'
     })
+
+# ✅ New heartbeat route added here
+@app.route('/api/heartbeat', methods=['POST'])
+def heartbeat():
+    """Heartbeat endpoint for terminal monitoring"""
+    try:
+        # ---- DB check ----
+        try:
+            db_manager.test_connection()
+            db_status = "ok"
+        except Exception as e:
+            logger.error(f"DB health check failed: {str(e)}")
+            db_status = "error"
+
+        # ---- Processor check ----
+        try:
+            processor_status = processor.get_terminal_status()
+            processor_status_str = "ok" if processor_status else "error"
+        except Exception as e:
+            logger.error(f"Processor health check failed: {str(e)}")
+            processor_status_str = "error"
+
+        # ---- Notification service check ----
+        try:
+            notif_status = "ok" if notification_service.is_alive() else "error"
+        except Exception:
+            notif_status = "unknown"
+
+        return jsonify({
+            'success': True,
+            'status': 'alive',
+            'components': {
+                'database': db_status,
+                'processor': processor_status_str,
+                'notification_service': notif_status
+            }
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error in heartbeat: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Heartbeat error: {str(e)}'
+        }), 500
+# ✅ End heartbeat route
 
 @app.route('/api/register', methods=['POST'])
 def register_merchant():
