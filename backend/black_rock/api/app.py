@@ -1,4 +1,4 @@
-""" 
+"""
 Black Rock Payment Terminal - Flask API Application
 """
 
@@ -57,7 +57,7 @@ processor = TransactionProcessor(
 # Start notification background thread
 notification_service.start_notification_processing()
 
-# ✅ Inside your `/api/login` route, change the session line:
+# Your existing login route
 @app.route('/api/login', methods=['POST'])
 def login_merchant():
     """Authenticate a merchant"""
@@ -97,6 +97,20 @@ def login_merchant():
             'success': False,
             'message': f'Authentication error: {str(e)}'
         }), 500
+
+
+# === NEW: Add heartbeat route to avoid 404 and OFFLINE errors ===
+@app.route('/heartbeat', methods=['POST'])
+def heartbeat():
+    # Simply return a 200 OK with a JSON payload
+    return jsonify({"status": "alive"}), 200
+
+
+# === NEW: Add root URL route to avoid Not Found error on URL ===
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({"message": "API is running"}), 200
+
 
 # 🟢 All other routes stay unchanged (no edits needed)
 
