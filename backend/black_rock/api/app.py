@@ -6,7 +6,7 @@ import os
 import json
 import logging
 import secrets
-from datetime import timedelta  # ✅ added for session config
+from datetime import timedelta
 
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 
-# ✅ Use a fixed secret key from environment or fallback
+# Use a fixed secret key from environment or fallback
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
-# ✅ Session cookie settings for cross-origin requests
+# Session cookie settings for cross-origin requests
 app.config.update(
     SESSION_COOKIE_SAMESITE='None',
     SESSION_COOKIE_SECURE=True,
@@ -38,7 +38,7 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=1)
 )
 
-# ✅ CORS enabled for frontend origin
+# CORS enabled for frontend origin
 CORS(app, supports_credentials=True, origins=["https://volvo-xc-90.onrender.com"])
 
 # Initialize services
@@ -57,19 +57,19 @@ processor = TransactionProcessor(
 # Start notification background thread
 notification_service.start_notification_processing()
 
-# Your existing login route
+# Login route
 @app.route('/api/login', methods=['POST'])
 def login_merchant():
     """Authenticate a merchant"""
     try:
         data = request.get_json()
-        
+
         if not data:
             return jsonify({
                 'success': False,
                 'message': 'No data provided'
             }), 400
-        
+
         required_fields = ['email', 'password']
         for field in required_fields:
             if field not in data:
@@ -77,20 +77,20 @@ def login_merchant():
                     'success': False,
                     'message': f'Missing required field: {field}'
                 }), 400
-        
+
         result = auth_service.authenticate_merchant(
             email=data['email'],
             password=data['password']
         )
-        
+
         if result['success']:
-            # ✅ Make session permanent so cookie stays alive
+            # Make session permanent so cookie stays alive
             session.permanent = True
             session['merchant_id'] = result['merchant_id']
             return jsonify(result), 200
         else:
             return jsonify(result), 401
-            
+
     except Exception as e:
         logger.error(f"Error in login_merchant: {str(e)}")
         return jsonify({
@@ -99,20 +99,44 @@ def login_merchant():
         }), 500
 
 
-# === NEW: Add heartbeat route to avoid 404 and OFFLINE errors ===
+# Heartbeat endpoint to avoid offline/404 issues
 @app.route('/heartbeat', methods=['POST'])
 def heartbeat():
-    # Simply return a 200 OK with a JSON payload
     return jsonify({"status": "alive"}), 200
 
 
-# === NEW: Add root URL route to avoid Not Found error on URL ===
+# Root URL endpoint to avoid Not Found error
 @app.route('/', methods=['GET'])
 def index():
     return jsonify({"message": "API is running"}), 200
 
 
-# 🟢 All other routes stay unchanged (no edits needed)
+# === NEW: Protocols endpoint to provide protocol recognition ===
+@app.route('/api/protocols', methods=['GET'])
+def get_protocols():
+    try:
+        # Ideally this list could be dynamic, loaded from DB or config files
+        protocols = {
+            "POS Terminal -101.1 (4-digit approval)": 4,
+            "POS Terminal -101.4 (6-digit approval)": 6,
+            "POS Terminal -101.6 (Pre-authorization)": 6,
+            "POS Terminal -101.7 (4-digit approval)": 4,
+            "POS Terminal -101.8 (PIN-LESS transaction)": 4,
+            "POS Terminal -201.1 (6-digit approval)": 6,
+            "POS Terminal -201.3 (6-digit approval)": 6,
+            "POS Terminal -201.5 (6-digit approval)": 6
+        }
+        return jsonify({
+            "success": True,
+            "protocols": protocols
+        }), 200
+    except Exception as e:
+        logger.error(f"Failed to load protocols: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": f"Failed to load protocols: {str(e)}"
+        }), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
