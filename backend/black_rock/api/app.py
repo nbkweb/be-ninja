@@ -55,11 +55,12 @@ def health_check():
     })
 
 # ✅ New heartbeat route added here
+
 @app.route('/api/heartbeat', methods=['POST'])
 def heartbeat():
     """Heartbeat endpoint for terminal monitoring"""
     try:
-        # ---- DB check ----
+        # Check DB
         try:
             db_manager.test_connection()
             db_status = "ok"
@@ -67,7 +68,7 @@ def heartbeat():
             logger.error(f"DB health check failed: {str(e)}")
             db_status = "error"
 
-        # ---- Processor check ----
+        # Check transaction processor
         try:
             processor_status = processor.get_terminal_status()
             processor_status_str = "ok" if processor_status else "error"
@@ -75,12 +76,13 @@ def heartbeat():
             logger.error(f"Processor health check failed: {str(e)}")
             processor_status_str = "error"
 
-        # ---- Notification service check ----
+        # Check notification service
         try:
             notif_status = "ok" if notification_service.is_alive() else "error"
         except Exception:
             notif_status = "unknown"
 
+        # Return results
         return jsonify({
             'success': True,
             'status': 'alive',
@@ -97,6 +99,7 @@ def heartbeat():
             'success': False,
             'message': f'Heartbeat error: {str(e)}'
         }), 500
+        
 # ✅ End heartbeat route
 
 @app.route('/api/register', methods=['POST'])
